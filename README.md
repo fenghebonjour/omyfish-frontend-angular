@@ -1,4 +1,15 @@
-# FrontendAngular
+# OMyFish — Your AI Fishing Companion (Angular Frontend)
+
+*When, Where, What you catch.*
+
+Demo: https://huggingface.co/spaces/fenghebonjour/omyfish
+
+Angular twin of [omyfish-frontend](https://github.com/fenghebonjour/omyfish-frontend) — same
+pages and REST contract (`/api/v1/...`), reimplemented in Angular for a side-by-side
+comparison with the React version. Shared across the OMyFish enterprise backends —
+[omyfish-java](https://github.com/fenghebonjour/omyfish-java),
+[omyfish-dotnet](https://github.com/fenghebonjour/omyfish-dotnet), and
+[omyfish-python-web](https://github.com/fenghebonjour/omyfish-python-web).
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.5.
 
