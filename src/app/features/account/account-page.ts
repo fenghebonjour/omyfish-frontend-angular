@@ -38,7 +38,7 @@ export class AccountPage {
   plans: Array<'monthly' | 'yearly'> = ['monthly', 'yearly'];
 
   constructor() {
-    firstValueFrom(this.api.billing.me(this.auth.token()!))
+    firstValueFrom(this.api.billing.me())
       .then((s) => this.sub.set(s))
       .catch((e) => this.error.set(errorMessage(e)));
   }
@@ -47,7 +47,7 @@ export class AccountPage {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const { checkoutUrl } = await firstValueFrom(this.api.billing.checkout(plan, this.auth.token()!));
+      const { checkoutUrl } = await firstValueFrom(this.api.billing.checkout(plan));
       window.location.href = checkoutUrl;
     } catch (e) {
       // React detects this by string-matching "503" inside the Error's

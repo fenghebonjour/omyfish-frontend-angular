@@ -42,8 +42,7 @@ export class AdminPage {
   }
 
   private load(): void {
-    const token = this.auth.token()!;
-    Promise.all([firstValueFrom(this.api.admin.stats(token)), firstValueFrom(this.api.admin.subscriptions(token))])
+    Promise.all([firstValueFrom(this.api.admin.stats()), firstValueFrom(this.api.admin.subscriptions())])
       .then(([s, rows]) => {
         this.stats.set(s);
         this.subs.set(rows);
@@ -65,14 +64,14 @@ export class AdminPage {
   }
 
   grant(userId: string): void {
-    this.act(() => firstValueFrom(this.api.admin.grant(userId, this.auth.token()!)));
+    this.act(() => firstValueFrom(this.api.admin.grant(userId)));
   }
 
   extendTrial(userId: string): void {
-    this.act(() => firstValueFrom(this.api.admin.extendTrial(userId, this.auth.token()!)));
+    this.act(() => firstValueFrom(this.api.admin.extendTrial(userId)));
   }
 
   revoke(userId: string): void {
-    this.act(() => firstValueFrom(this.api.admin.revoke(userId, this.auth.token()!)));
+    this.act(() => firstValueFrom(this.api.admin.revoke(userId)));
   }
 }

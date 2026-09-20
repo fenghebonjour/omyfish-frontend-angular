@@ -114,7 +114,7 @@ export class AuthService {
   // Shared in-flight refresh: several authenticated calls 401ing at once (e.g. on the same
   // page load) collapse into a single /auth/refresh — the React twin's `refreshOnce()`.
   // Resolves to the new access token, or null if the refresh cookie is dead too, in which
-  // case the session is ended (see expireSession). Used by core/auth-refresh.interceptor.ts.
+  // case the session is ended (see expireSession). Used by core/auth.interceptor.ts.
   private refreshInFlight: Promise<string | null> | null = null;
 
   refreshSession(): Promise<string | null> {

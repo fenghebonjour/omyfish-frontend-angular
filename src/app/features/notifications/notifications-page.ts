@@ -22,7 +22,7 @@ export class NotificationsPage {
   unread = computed(() => this.notifications().filter((n) => !n.isRead).length);
 
   constructor() {
-    firstValueFrom(this.api.notifications.getAll(this.auth.token()!))
+    firstValueFrom(this.api.notifications.getAll())
       .then((ns) => this.notifications.set(ns))
       .catch((err) => this.error.set(errorMessage(err)))
       .finally(() => this.loading.set(false));
@@ -30,7 +30,7 @@ export class NotificationsPage {
 
   async handleRead(id: string): Promise<void> {
     try {
-      await firstValueFrom(this.api.notifications.markRead(id, this.auth.token()!));
+      await firstValueFrom(this.api.notifications.markRead(id));
       this.notifications.update((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
     } catch {
       // ignore

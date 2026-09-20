@@ -147,11 +147,8 @@ export class FishUploader {
       formData.append('image', file);
       formData.append('topK', '5');
 
-      const token = this.auth.token();
       const data = await firstValueFrom(
-        this.http.post<IdentifyFishResult>(`${environment.apiBase}/api/v1/species/identify`, formData, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }),
+        this.http.post<IdentifyFishResult>(`${environment.apiBase}/api/v1/species/identify`, formData),
       );
       this.result.set(data);
 
@@ -197,8 +194,7 @@ export class FishUploader {
 
   async handleSave(): Promise<void> {
     const result = this.result();
-    const token = this.auth.token();
-    if (!result || !token) return;
+    if (!result || !this.auth.isAuthenticated()) return;
     this.saving.set(true);
     try {
       const top = result.predictions[0];
@@ -213,11 +209,7 @@ export class FishUploader {
         longitude: this.lng() ? Number(this.lng()) : null,
       };
 
-      await firstValueFrom(
-        this.http.post(`${environment.apiBase}/api/v1/observations`, body, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      );
+      await firstValueFrom(this.http.post(`${environment.apiBase}/api/v1/observations`, body));
       this.saved.set(true);
     } catch (err) {
       alert('Save failed: ' + errorMessage(err));

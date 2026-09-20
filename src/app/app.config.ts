@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
-import { authRefreshInterceptor } from './core/auth-refresh.interceptor';
+import { authInterceptor } from './core/auth.interceptor';
 
 // Angular has no build-in fetch wrapper like the React app's lib/api.ts —
 // HttpClient is provided once here (like a global fetch) and injected
@@ -20,6 +20,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authRefreshInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor])),
   ]
 };

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 // Explicit (not the ambient `GeoJSON` global): the unit-test build doesn't pull in Leaflet's
 // types, which is the only thing that made the global visible in the app build.
@@ -8,10 +8,11 @@ import { environment } from '../../environments/environment';
 import * as M from './models';
 
 /**
- * Angular twin of src/lib/api.ts. Same method names, same paths, same
- * per-call token parameter (no global auth interceptor — kept explicit to
- * mirror the React version line for line). The one structural difference
- * that matters for comparison:
+ * Angular twin of src/lib/api.ts. Same method names, same paths. One deliberate
+ * difference: no per-call `token` parameter — core/auth.interceptor.ts attaches the
+ * current bearer token to every API request (and refreshes it on a 401), so call sites
+ * don't thread it through. Beyond that, the structural difference that matters for
+ * comparison:
  *
  *   React `fetch`             Angular `HttpClient`
  *   -----------------------   ------------------------------------------
@@ -31,10 +32,6 @@ export class ApiService {
   private http = inject(HttpClient);
   private base = environment.apiBase;
 
-  private authHeaders(token?: string): HttpHeaders | undefined {
-    return token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-  }
-
   auth = {
     // withCredentials on login/refresh/logout: the backend sets and reads the refresh token
     // as an httpOnly cookie, which the browser only stores/attaches on cross-origin
@@ -52,18 +49,15 @@ export class ApiService {
     logout: (): Observable<string> =>
       this.http.post(`${this.base}/api/v1/auth/logout`, null, { withCredentials: true, responseType: 'text' }),
 
-    me: (token: string): Observable<M.UserDto> =>
-      this.http.get<M.UserDto>(`${this.base}/api/v1/auth/me`, { headers: this.authHeaders(token) }),
+    me: (): Observable<M.UserDto> => this.http.get<M.UserDto>(`${this.base}/api/v1/auth/me`),
   };
 
   species = {
-    identify: (image: File, topK = 5, token?: string): Observable<M.IdentifyFishResult> => {
+    identify: (image: File, topK = 5): Observable<M.IdentifyFishResult> => {
       const form = new FormData();
       form.append('image', image);
       form.append('topK', String(topK));
-      return this.http.post<M.IdentifyFishResult>(`${this.base}/api/v1/species/identify`, form, {
-        headers: this.authHeaders(token),
-      });
+      return this.http.post<M.IdentifyFishResult>(`${this.base}/api/v1/species/identify`, form);
     },
 
     getAll: (northAmericanFreshwater?: boolean): Observable<M.PredictionDto[]> => {
@@ -113,79 +107,48 @@ export class ApiService {
   };
 
   notifications = {
-    getAll: (token: string): Observable<M.NotificationDto[]> =>
-      this.http.get<M.NotificationDto[]>(`${this.base}/api/v1/notifications`, { headers: this.authHeaders(token) }),
+    getAll: (): Observable<M.NotificationDto[]> =>
+      this.http.get<M.NotificationDto[]>(`${this.base}/api/v1/notifications`),
 
-    markRead: (id: string, token: string): Observable<void> =>
+    markRead: (id: string): Observable<void> =>
       this.http
-        .put(`${this.base}/api/v1/notifications/${id}/read`, null, {
-          headers: this.authHeaders(token),
-          responseType: 'text',
-        })
+        .put(`${this.base}/api/v1/notifications/${id}/read`, null, { responseType: 'text' })
         .pipe(map(() => undefined)),
   };
 
   billing = {
-    me: (token: string): Observable<M.SubscriptionDto> =>
-      this.http.get<M.SubscriptionDto>(`${this.base}/api/v1/billing/me`, { headers: this.authHeaders(token) }),
+    me: (): Observable<M.SubscriptionDto> => this.http.get<M.SubscriptionDto>(`${this.base}/api/v1/billing/me`),
 
-    checkout: (plan: 'monthly' | 'yearly', token: string): Observable<{ checkoutUrl: string }> =>
-      this.http.post<{ checkoutUrl: string }>(
-        `${this.base}/api/v1/billing/checkout`,
-        { plan },
-        { headers: this.authHeaders(token) },
-      ),
+    checkout: (plan: 'monthly' | 'yearly'): Observable<{ checkoutUrl: string }> =>
+      this.http.post<{ checkoutUrl: string }>(`${this.base}/api/v1/billing/checkout`, { plan }),
   };
 
   admin = {
-    stats: (token: string): Observable<M.AdminStats> =>
-      this.http.get<M.AdminStats>(`${this.base}/api/v1/admin/stats`, { headers: this.authHeaders(token) }),
+    stats: (): Observable<M.AdminStats> => this.http.get<M.AdminStats>(`${this.base}/api/v1/admin/stats`),
 
-    subscriptions: (token: string): Observable<M.AdminSubscriptionRow[]> =>
-      this.http.get<M.AdminSubscriptionRow[]>(`${this.base}/api/v1/admin/subscriptions`, {
-        headers: this.authHeaders(token),
-      }),
+    subscriptions: (): Observable<M.AdminSubscriptionRow[]> =>
+      this.http.get<M.AdminSubscriptionRow[]>(`${this.base}/api/v1/admin/subscriptions`),
 
-    grant: (userId: string, token: string, days = 365, plan = 'yearly'): Observable<M.SubscriptionDto> =>
-      this.http.post<M.SubscriptionDto>(
-        `${this.base}/api/v1/admin/subscriptions/${userId}/grant`,
-        { days, plan },
-        { headers: this.authHeaders(token) },
-      ),
+    grant: (userId: string, days = 365, plan = 'yearly'): Observable<M.SubscriptionDto> =>
+      this.http.post<M.SubscriptionDto>(`${this.base}/api/v1/admin/subscriptions/${userId}/grant`, { days, plan }),
 
-    revoke: (userId: string, token: string): Observable<M.SubscriptionDto> =>
-      this.http.post<M.SubscriptionDto>(
-        `${this.base}/api/v1/admin/subscriptions/${userId}/revoke`,
-        null,
-        { headers: this.authHeaders(token) },
-      ),
+    revoke: (userId: string): Observable<M.SubscriptionDto> =>
+      this.http.post<M.SubscriptionDto>(`${this.base}/api/v1/admin/subscriptions/${userId}/revoke`, null),
 
-    extendTrial: (userId: string, token: string, days = 7): Observable<M.SubscriptionDto> =>
-      this.http.post<M.SubscriptionDto>(
-        `${this.base}/api/v1/admin/subscriptions/${userId}/extend-trial`,
-        { days },
-        { headers: this.authHeaders(token) },
-      ),
+    extendTrial: (userId: string, days = 7): Observable<M.SubscriptionDto> =>
+      this.http.post<M.SubscriptionDto>(`${this.base}/api/v1/admin/subscriptions/${userId}/extend-trial`, { days }),
   };
 
   observations = {
-    getAll: (token: string, myOnly = true): Observable<M.ObservationDto[]> =>
-      this.http.get<M.ObservationDto[]>(`${this.base}/api/v1/observations`, {
-        headers: this.authHeaders(token),
-        params: { myOnly },
-      }),
+    getAll: (myOnly = true): Observable<M.ObservationDto[]> =>
+      this.http.get<M.ObservationDto[]>(`${this.base}/api/v1/observations`, { params: { myOnly } }),
 
-    getById: (id: string, token: string): Observable<M.ObservationDto> =>
-      this.http.get<M.ObservationDto>(`${this.base}/api/v1/observations/${id}`, {
-        headers: this.authHeaders(token),
-      }),
+    getById: (id: string): Observable<M.ObservationDto> =>
+      this.http.get<M.ObservationDto>(`${this.base}/api/v1/observations/${id}`),
 
-    delete: (id: string, token: string): Observable<void> =>
+    delete: (id: string): Observable<void> =>
       this.http
-        .delete(`${this.base}/api/v1/observations/${id}`, {
-          headers: this.authHeaders(token),
-          responseType: 'text',
-        })
+        .delete(`${this.base}/api/v1/observations/${id}`, { responseType: 'text' })
         .pipe(map(() => undefined)),
 
     getGeoJson: (): Observable<object> => this.http.get<object>(`${this.base}/api/v1/observations/geojson`),

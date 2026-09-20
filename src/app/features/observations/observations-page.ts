@@ -26,7 +26,7 @@ export class ObservationsPage {
   stations = signal<RegsStation[] | undefined>(undefined);
 
   constructor() {
-    firstValueFrom(this.api.observations.getAll(this.auth.token()!, true))
+    firstValueFrom(this.api.observations.getAll(true))
       .then((obs) => this.observations.set(obs))
       .catch((e) => this.error.set(errorMessage(e)))
       .finally(() => this.loading.set(false));
@@ -35,7 +35,7 @@ export class ObservationsPage {
   async handleDelete(id: string): Promise<void> {
     if (!confirm('Delete this observation?')) return;
     try {
-      await firstValueFrom(this.api.observations.delete(id, this.auth.token()!));
+      await firstValueFrom(this.api.observations.delete(id));
       this.observations.update((prev) => prev.filter((o) => o.id !== id));
     } catch (e) {
       alert('Delete failed: ' + errorMessage(e));
