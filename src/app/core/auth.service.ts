@@ -4,7 +4,6 @@ import { ApiService } from './api.service';
 import type { TokenResponse } from './models';
 
 const KEY_TOKEN = 'omyfish_token';
-const KEY_REFRESH = 'omyfish_refresh';
 const KEY_USER_ID = 'omyfish_userId';
 const KEY_EMAIL = 'omyfish_email';
 
@@ -52,7 +51,6 @@ export class AuthService {
     const token = localStorage.getItem(KEY_TOKEN);
     const userId = localStorage.getItem(KEY_USER_ID);
     const email = localStorage.getItem(KEY_EMAIL);
-    const refreshToken = localStorage.getItem(KEY_REFRESH);
 
     if (token) {
       this.token.set(token);
@@ -60,8 +58,11 @@ export class AuthService {
       this.email.set(email);
       this.isLoading.set(false);
       this.ready = Promise.resolve();
-    } else if (refreshToken) {
-      this.ready = firstValueFrom(this.api.auth.refresh(refreshToken))
+    } else {
+      // No access token in localStorage — try the httpOnly refresh cookie, if any. The
+      // refresh token is no longer readable from JS (BACKLOG.md item F, WEAKNESS_AUDIT.md
+      // §1.3); a 401 here just means the user isn't logged in.
+      this.ready = firstValueFrom(this.api.auth.refresh())
         .then((resp) => {
           this.persist(resp);
           this.token.set(resp.token);
@@ -70,22 +71,18 @@ export class AuthService {
         })
         .catch(() => this.clearStorage())
         .finally(() => this.isLoading.set(false));
-    } else {
-      this.isLoading.set(false);
-      this.ready = Promise.resolve();
     }
   }
 
   private persist(resp: TokenResponse) {
     localStorage.setItem(KEY_TOKEN, resp.token);
-    localStorage.setItem(KEY_REFRESH, resp.refreshToken);
     localStorage.setItem(KEY_USER_ID, resp.userId);
     localStorage.setItem(KEY_EMAIL, resp.email);
   }
 
   private clearStorage() {
     localStorage.removeItem(KEY_TOKEN);
-    localStorage.removeItem(KEY_REFRESH);
+    localStorage.removeItem('omyfish_refresh'); // legacy key from before the cookie change
     localStorage.removeItem(KEY_USER_ID);
     localStorage.removeItem(KEY_EMAIL);
   }
@@ -106,5 +103,7 @@ export class AuthService {
     this.token.set(null);
     this.userId.set(null);
     this.email.set(null);
+    // Clears the httpOnly refresh cookie server-side; nothing to do if it fails.
+    firstValueFrom(this.api.auth.logout()).catch(() => {});
   }
 }

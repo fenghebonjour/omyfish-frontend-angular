@@ -33,14 +33,21 @@ export class ApiService {
   }
 
   auth = {
+    // withCredentials on login/refresh/logout: the backend sets and reads the refresh token
+    // as an httpOnly cookie, which the browser only stores/attaches on cross-origin
+    // requests when this is set (the React twin's `credentials: "include"`).
     login: (email: string, password: string): Observable<M.TokenResponse> =>
-      this.http.post<M.TokenResponse>(`${this.base}/api/v1/auth/login`, { email, password }),
+      this.http.post<M.TokenResponse>(`${this.base}/api/v1/auth/login`, { email, password }, { withCredentials: true }),
 
     register: (email: string, password: string, displayName?: string): Observable<M.UserDto> =>
       this.http.post<M.UserDto>(`${this.base}/api/v1/auth/register`, { email, password, displayName }),
 
-    refresh: (refreshToken: string): Observable<M.TokenResponse> =>
-      this.http.post<M.TokenResponse>(`${this.base}/api/v1/auth/refresh`, { refreshToken }),
+    // No body: the refresh token is the httpOnly cookie, not a value the client holds.
+    refresh: (): Observable<M.TokenResponse> =>
+      this.http.post<M.TokenResponse>(`${this.base}/api/v1/auth/refresh`, null, { withCredentials: true }),
+
+    logout: (): Observable<string> =>
+      this.http.post(`${this.base}/api/v1/auth/logout`, null, { withCredentials: true, responseType: 'text' }),
 
     me: (token: string): Observable<M.UserDto> =>
       this.http.get<M.UserDto>(`${this.base}/api/v1/auth/me`, { headers: this.authHeaders(token) }),

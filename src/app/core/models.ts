@@ -136,7 +136,6 @@ export interface NotificationDto {
 
 export interface TokenResponse {
   token: string;
-  refreshToken: string;
   userId: string;
   email: string;
   role: string;
