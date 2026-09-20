@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+// Explicit (not the ambient `GeoJSON` global): the unit-test build doesn't pull in Leaflet's
+// types, which is the only thing that made the global visible in the app build.
+import type { FeatureCollection } from 'geojson';
 import { environment } from '../../environments/environment';
 import * as M from './models';
 
@@ -92,8 +95,8 @@ export class ApiService {
     limits: (lat: number, lon: number, species = 'general'): Observable<M.RegsLimits> =>
       this.http.get<M.RegsLimits>(`${this.base}/api/v1/species/regs/limits`, { params: { lat, lon, species } }),
 
-    zonesGeoJson: (): Observable<GeoJSON.FeatureCollection> =>
-      this.http.get<GeoJSON.FeatureCollection>(`${this.base}/api/v1/species/regs/zones/geojson`),
+    zonesGeoJson: (): Observable<FeatureCollection> =>
+      this.http.get<FeatureCollection>(`${this.base}/api/v1/species/regs/zones/geojson`),
 
     consumptionStations: (lat: number, lon: number, limit = 5): Observable<M.RegsStation[]> =>
       this.http.get<M.RegsStation[]>(`${this.base}/api/v1/species/regs/consumption/stations`, {

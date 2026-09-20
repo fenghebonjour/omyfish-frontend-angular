@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth.service';
+import { AuthService, SESSION_EXPIRED_KEY } from '../../core/auth.service';
 import { errorMessage } from '../../core/http-error.util';
 
 /**
@@ -31,6 +31,14 @@ export class LoginPage {
   password = '';
   error = signal<string | null>(null);
   loading = signal(false);
+
+  constructor() {
+    // Set by AuthService.expireSession() when the refresh cookie was dead too.
+    if (sessionStorage.getItem(SESSION_EXPIRED_KEY)) {
+      sessionStorage.removeItem(SESSION_EXPIRED_KEY);
+      this.error.set('Your session expired — please log in again.');
+    }
+  }
 
   async handleSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();

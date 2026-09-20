@@ -1,7 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import type { TokenResponse } from './models';
+
+export const SESSION_EXPIRED_KEY = 'omyfish_session_expired';
 
 const KEY_TOKEN = 'omyfish_token';
 const KEY_USER_ID = 'omyfish_userId';
@@ -27,6 +30,7 @@ const KEY_EMAIL = 'omyfish_email';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private api = inject(ApiService);
+  private router = inject(Router);
 
   // Three separate signals mirror the three separate useState fields
   // React kept in one `AuthState` object.
@@ -105,5 +109,41 @@ export class AuthService {
     this.email.set(null);
     // Clears the httpOnly refresh cookie server-side; nothing to do if it fails.
     firstValueFrom(this.api.auth.logout()).catch(() => {});
+  }
+
+  // Shared in-flight refresh: several authenticated calls 401ing at once (e.g. on the same
+  // page load) collapse into a single /auth/refresh — the React twin's `refreshOnce()`.
+  // Resolves to the new access token, or null if the refresh cookie is dead too, in which
+  // case the session is ended (see expireSession). Used by core/auth-refresh.interceptor.ts.
+  private refreshInFlight: Promise<string | null> | null = null;
+
+  refreshSession(): Promise<string | null> {
+    this.refreshInFlight ??= firstValueFrom(this.api.auth.refresh())
+      .then((resp) => {
+        this.persist(resp);
+        this.token.set(resp.token);
+        this.userId.set(resp.userId);
+        this.email.set(resp.email);
+        return resp.token;
+      })
+      .catch(() => {
+        this.expireSession();
+        return null;
+      })
+      .finally(() => {
+        this.refreshInFlight = null;
+      });
+    return this.refreshInFlight;
+  }
+
+  // The refresh cookie is dead: clear local state and send the user to /login, where the
+  // page shows a "session expired" message (the React twin's `onSessionExpired`).
+  private expireSession(): void {
+    this.clearStorage();
+    this.token.set(null);
+    this.userId.set(null);
+    this.email.set(null);
+    sessionStorage.setItem(SESSION_EXPIRED_KEY, '1');
+    this.router.navigateByUrl('/login');
   }
 }
