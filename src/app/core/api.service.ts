@@ -119,8 +119,10 @@ export class ApiService {
   billing = {
     me: (): Observable<M.SubscriptionDto> => this.http.get<M.SubscriptionDto>(`${this.base}/api/v1/billing/me`),
 
-    checkout: (plan: 'monthly' | 'yearly'): Observable<{ checkoutUrl: string }> =>
-      this.http.post<{ checkoutUrl: string }>(`${this.base}/api/v1/billing/checkout`, { plan }),
+    checkout: (plan: 'monthly' | 'yearly'): Observable<M.CheckoutResponse> =>
+      this.http.post<M.CheckoutResponse>(`${this.base}/api/v1/billing/checkout`, { plan }, {
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+      }),
   };
 
   admin = {

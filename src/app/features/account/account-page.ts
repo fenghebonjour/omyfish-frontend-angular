@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
 import type { SubscriptionDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
+import { StripeCheckoutForm } from './stripe-checkout-form';
 
 const PLAN_LABELS: Record<string, string> = {
   monthly: '5 CAD / month',
@@ -24,7 +25,7 @@ const PLAN_LABELS: Record<string, string> = {
  */
 @Component({
   selector: 'app-account-page',
-  imports: [DatePipe],
+  imports: [DatePipe, StripeCheckoutForm],
   templateUrl: './account-page.html',
 })
 export class AccountPage {
@@ -34,6 +35,8 @@ export class AccountPage {
   sub = signal<SubscriptionDto | null>(null);
   error = signal<string | null>(null);
   busy = signal(false);
+  clientSecret = signal<string | null>(null);
+  finalizing = signal(false);
   planLabels = PLAN_LABELS;
   plans: Array<'monthly' | 'yearly'> = ['monthly', 'yearly'];
 
@@ -47,8 +50,13 @@ export class AccountPage {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const { checkoutUrl } = await firstValueFrom(this.api.billing.checkout(plan));
-      window.location.href = checkoutUrl;
+      const { processor, clientSecret } = await firstValueFrom(this.api.billing.checkout(plan));
+      if (processor !== 'stripe') {
+        this.error.set("This payment method isn't supported yet.");
+        this.busy.set(false);
+        return;
+      }
+      this.clientSecret.set(clientSecret);
     } catch (e) {
       // React detects this by string-matching "503" inside the Error's
       // message (apiFetch's `${res.status}: ${text}` text). HttpErrorResponse
@@ -59,6 +67,17 @@ export class AccountPage {
           : errorMessage(e),
       );
       this.busy.set(false);
+    }
+  }
+
+  async onCheckoutDone(): Promise<void> {
+    this.clientSecret.set(null);
+    this.busy.set(false);
+    this.finalizing.set(true);
+    try {
+      this.sub.set(await firstValueFrom(this.api.billing.me()));
+    } finally {
+      this.finalizing.set(false);
     }
   }
 

@@ -5,4 +5,6 @@
 // per configuration, is the idiomatic stand-in.
 export const environment = {
   apiBase: 'http://localhost:8080',
+  // Publishable keys are meant to be public — safe to ship in the client bundle.
+  stripePublishableKey: '',
 };

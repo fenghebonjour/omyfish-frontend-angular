@@ -39,21 +39,29 @@
             </p>
           }
 
-          @if (s.status !== 'active') {
-            <div class="grid grid-cols-2 gap-3">
-              @for (plan of plans; track plan) {
-                <button
-                  (click)="subscribe(plan)"
-                  [disabled]="busy()"
-                  class="border border-blue-600 text-blue-700 hover:bg-blue-50 disabled:opacity-50 rounded-lg py-3 text-sm font-medium"
-                >
-                  {{ planLabels[plan] }}
-                  @if (plan === 'yearly') {
-                    <span class="block text-xs text-gray-400">2 months free</span>
-                  }
-                </button>
-              }
-            </div>
+          @if (finalizing()) {
+            <p class="text-sm text-gray-500 animate-pulse">Finalizing your subscription…</p>
+          }
+
+          @if (s.status !== 'active' && !finalizing()) {
+            @if (clientSecret(); as secret) {
+              <app-stripe-checkout-form [clientSecret]="secret" (done)="onCheckoutDone()" />
+            } @else {
+              <div class="grid grid-cols-2 gap-3">
+                @for (plan of plans; track plan) {
+                  <button
+                    (click)="subscribe(plan)"
+                    [disabled]="busy()"
+                    class="border border-blue-600 text-blue-700 hover:bg-blue-50 disabled:opacity-50 rounded-lg py-3 text-sm font-medium"
+                  >
+                    {{ planLabels[plan] }}
+                    @if (plan === 'yearly') {
+                      <span class="block text-xs text-gray-400">2 months free</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
           }
         </div>
       }

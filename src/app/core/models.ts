@@ -155,6 +155,13 @@ export interface SubscriptionDto {
   currentPeriodEnd: string | null;
 }
 
+export interface CheckoutResponse {
+  processor: string; // "stripe" | "paypal" | "adyen" — only "stripe" is handled client-side today
+  clientSecret: string;
+  subscriptionId: string;
+  status: string;
+}
+
 export interface AdminStats {
   users: number;
   subscriptions: Record<string, number>;

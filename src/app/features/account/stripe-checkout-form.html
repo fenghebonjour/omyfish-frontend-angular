@@ -1,0 +1,16 @@
+<form (submit)="handleSubmit($event)" class="flex flex-col gap-4">
+  <div #paymentElement></div>
+  @if (!ready()) {
+    <p class="text-sm text-gray-400 animate-pulse">Loading payment form…</p>
+  }
+  @if (error(); as err) {
+    <p class="text-sm text-red-700">{{ err }}</p>
+  }
+  <button
+    type="submit"
+    [disabled]="!ready() || submitting()"
+    class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg py-3 text-sm font-medium"
+  >
+    {{ submitting() ? 'Confirming…' : 'Confirm payment' }}
+  </button>
+</form>
