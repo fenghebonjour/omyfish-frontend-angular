@@ -119,9 +119,12 @@ export class ApiService {
   billing = {
     me: (): Observable<M.SubscriptionDto> => this.http.get<M.SubscriptionDto>(`${this.base}/api/v1/billing/me`),
 
-    checkout: (plan: 'monthly' | 'yearly'): Observable<M.CheckoutResponse> =>
+    // idempotencyKey is the caller's responsibility, not generated here — a retry of the same
+    // checkout attempt (e.g. after a timeout) must reuse the same key, or the backend's
+    // idempotency protection (and Stripe's own) never actually engages. See AccountPage.
+    checkout: (plan: 'monthly' | 'yearly', idempotencyKey: string): Observable<M.CheckoutResponse> =>
       this.http.post<M.CheckoutResponse>(`${this.base}/api/v1/billing/checkout`, { plan }, {
-        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        headers: { 'Idempotency-Key': idempotencyKey },
       }),
   };
 

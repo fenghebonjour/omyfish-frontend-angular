@@ -39,6 +39,7 @@ export class AccountPage {
   finalizing = signal(false);
   planLabels = PLAN_LABELS;
   plans: Array<'monthly' | 'yearly'> = ['monthly', 'yearly'];
+  private pendingCheckout: { plan: string; key: string } | null = null;
 
   constructor() {
     firstValueFrom(this.api.billing.me())
@@ -49,8 +50,14 @@ export class AccountPage {
   async subscribe(plan: 'monthly' | 'yearly'): Promise<void> {
     this.busy.set(true);
     this.error.set(null);
+    // Reuse the same key when the user retries the same plan after a failure, so the backend's
+    // idempotency handling (and Stripe's) actually sees a retry instead of a brand-new attempt.
+    const idempotencyKey =
+      this.pendingCheckout?.plan === plan ? this.pendingCheckout.key : crypto.randomUUID();
+    this.pendingCheckout = { plan, key: idempotencyKey };
     try {
-      const { processor, clientSecret } = await firstValueFrom(this.api.billing.checkout(plan));
+      const { processor, clientSecret } =
+        await firstValueFrom(this.api.billing.checkout(plan, idempotencyKey));
       if (processor !== 'stripe') {
         this.error.set("This payment method isn't supported yet.");
         this.busy.set(false);
@@ -72,6 +79,7 @@ export class AccountPage {
 
   async onCheckoutDone(): Promise<void> {
     this.clientSecret.set(null);
+    this.pendingCheckout = null;
     this.busy.set(false);
     this.finalizing.set(true);
     try {
