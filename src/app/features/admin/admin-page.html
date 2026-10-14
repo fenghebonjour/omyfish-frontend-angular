@@ -18,10 +18,10 @@
       @if (stats(); as s) {
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
           @for (row of [
-            ['Users', s.users],
-            ['Active subs', s.subscriptions['active'] ?? 0],
-            ['On trial', s.subscriptions['trialing'] ?? 0],
-            ['Expired', s.subscriptions['expired'] ?? 0],
+            ['Active subs', s.active],
+            ['On trial', s.trialing],
+            ['Past due', s.pastDue],
+            ['Expired', s.expired],
             ['MRR (CAD)', '$' + s.mrrCad.toFixed(2)],
           ]; track row[0]) {
             <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
