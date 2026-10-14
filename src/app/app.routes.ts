@@ -58,4 +58,27 @@ export const routes: Routes = [
     loadComponent: () => import('./features/observations/observations-page').then((m) => m.ObservationsPage),
     canActivate: [authGuard],
   },
+  {
+    path: 'shop',
+    loadComponent: () => import('./features/shop/shop-page').then((m) => m.ShopPage),
+  },
+  {
+    path: 'shop/:id',
+    loadComponent: () => import('./features/shop/product-detail-page').then((m) => m.ProductDetailPage),
+  },
+  {
+    // Open to guests — checkout accepts either an account token or a guest email.
+    path: 'cart',
+    loadComponent: () => import('./features/shop/cart-page').then((m) => m.CartPage),
+  },
+  {
+    path: 'orders',
+    loadComponent: () => import('./features/shop/orders-page').then((m) => m.OrdersPage),
+    canActivate: [authGuard],
+  },
+  {
+    // Public guest order tracking by orderId+email, no account needed.
+    path: 'orders/track',
+    loadComponent: () => import('./features/shop/track-order-page').then((m) => m.TrackOrderPage),
+  },
 ];

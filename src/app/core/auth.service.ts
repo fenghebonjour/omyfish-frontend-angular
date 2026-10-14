@@ -3,12 +3,14 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
 import type { TokenResponse } from './models';
+import { peekGuestCartToken, clearGuestCartToken } from './guest-cart';
 
 export const SESSION_EXPIRED_KEY = 'omyfish_session_expired';
 
 const KEY_TOKEN = 'omyfish_token';
 const KEY_USER_ID = 'omyfish_userId';
 const KEY_EMAIL = 'omyfish_email';
+const KEY_ROLE = 'omyfish_role';
 
 /**
  * Angular twin of contexts/AuthContext.tsx.
@@ -37,6 +39,7 @@ export class AuthService {
   token = signal<string | null>(null);
   userId = signal<string | null>(null);
   email = signal<string | null>(null);
+  role = signal<string | null>(null);
   isLoading = signal(true);
 
   // `computed()` is Angular's useMemo: it only recalculates when a signal
@@ -55,11 +58,13 @@ export class AuthService {
     const token = localStorage.getItem(KEY_TOKEN);
     const userId = localStorage.getItem(KEY_USER_ID);
     const email = localStorage.getItem(KEY_EMAIL);
+    const role = localStorage.getItem(KEY_ROLE);
 
     if (token) {
       this.token.set(token);
       this.userId.set(userId);
       this.email.set(email);
+      this.role.set(role);
       this.isLoading.set(false);
       this.ready = Promise.resolve();
     } else {
@@ -72,6 +77,7 @@ export class AuthService {
           this.token.set(resp.token);
           this.userId.set(resp.userId);
           this.email.set(resp.email);
+          this.role.set(resp.role);
         })
         .catch(() => this.clearStorage())
         .finally(() => this.isLoading.set(false));
@@ -82,6 +88,7 @@ export class AuthService {
     localStorage.setItem(KEY_TOKEN, resp.token);
     localStorage.setItem(KEY_USER_ID, resp.userId);
     localStorage.setItem(KEY_EMAIL, resp.email);
+    localStorage.setItem(KEY_ROLE, resp.role);
   }
 
   private clearStorage() {
@@ -89,6 +96,7 @@ export class AuthService {
     localStorage.removeItem('omyfish_refresh'); // legacy key from before the cookie change
     localStorage.removeItem(KEY_USER_ID);
     localStorage.removeItem(KEY_EMAIL);
+    localStorage.removeItem(KEY_ROLE);
   }
 
   async login(email: string, password: string): Promise<void> {
@@ -100,6 +108,19 @@ export class AuthService {
     this.token.set(resp.token);
     this.userId.set(resp.userId);
     this.email.set(resp.email);
+    this.role.set(resp.role);
+
+    // Fold any guest cart built up while logged out into the account cart. Left in place on
+    // failure so a later login can retry the merge.
+    const guestCartToken = peekGuestCartToken();
+    if (guestCartToken) {
+      try {
+        await firstValueFrom(this.api.shop.cart.merge(guestCartToken));
+        clearGuestCartToken();
+      } catch {
+        // retry on next login
+      }
+    }
   }
 
   logout(): void {
@@ -107,6 +128,7 @@ export class AuthService {
     this.token.set(null);
     this.userId.set(null);
     this.email.set(null);
+    this.role.set(null);
     // Clears the httpOnly refresh cookie server-side; nothing to do if it fails.
     firstValueFrom(this.api.auth.logout()).catch(() => {});
   }
@@ -124,6 +146,7 @@ export class AuthService {
         this.token.set(resp.token);
         this.userId.set(resp.userId);
         this.email.set(resp.email);
+        this.role.set(resp.role);
         return resp.token;
       })
       .catch(() => {
@@ -143,6 +166,7 @@ export class AuthService {
     this.token.set(null);
     this.userId.set(null);
     this.email.set(null);
+    this.role.set(null);
     sessionStorage.setItem(SESSION_EXPIRED_KEY, '1');
     this.router.navigateByUrl('/login');
   }

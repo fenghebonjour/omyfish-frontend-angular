@@ -177,3 +177,47 @@ export interface AdminSubscriptionRow {
   trialEnd: string | null;
   currentPeriodEnd: string | null;
 }
+
+export interface ProductDto {
+  id: string;
+  name: string;
+  description: string;
+  priceCents: number;
+  imageUrl: string;
+  stockQuantity: number;
+}
+
+export interface CartItemDto {
+  productId: string;
+  quantity: number;
+}
+
+export interface CartDto {
+  cartId: string;
+  items: CartItemDto[];
+}
+
+export interface OrderLineDto {
+  productId: string;
+  productName: string;
+  unitPriceCents: number;
+  quantity: number;
+}
+
+// Status: PENDING_PAYMENT | PAID | CANCELLED | RETURN_REQUESTED | RETURNED
+export interface OrderDto {
+  id: string;
+  status: string;
+  totalCents: number;
+  lines: OrderLineDto[];
+  createdAt: string;
+  paidAt: string | null;
+  returnRequestedAt: string | null;
+  returnedAt: string | null;
+  returnReason: string | null;
+}
+
+export interface CheckoutSessionResponse {
+  orderId: string;
+  checkoutUrl: string;
+}

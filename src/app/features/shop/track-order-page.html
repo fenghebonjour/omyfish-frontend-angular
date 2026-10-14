@@ -1,0 +1,68 @@
+<div class="max-w-md mx-auto flex flex-col gap-6">
+  <h1 class="text-2xl font-bold text-gray-900">Track Your Order</h1>
+  <p class="text-sm text-gray-500">
+    Enter your order id and the email you checked out with — no account needed.
+  </p>
+
+  <form (submit)="handleSubmit($event)" class="flex flex-col gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Order id</label>
+      <input
+        type="text"
+        required
+        [(ngModel)]="orderId"
+        name="orderId"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="e.g. 3f29a1b2-…"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+      <input
+        type="email"
+        required
+        [(ngModel)]="email"
+        name="email"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="you@example.com"
+      />
+    </div>
+
+    @if (error(); as err) {
+      <div class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{{ err }}</div>
+    }
+
+    <button
+      type="submit"
+      [disabled]="loading()"
+      class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+    >
+      {{ loading() ? 'Looking up…' : 'Find order' }}
+    </button>
+  </form>
+
+  @if (order(); as o) {
+    <div class="border rounded-xl p-4 bg-white shadow-sm">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <p class="font-semibold text-gray-900">
+            Order {{ o.id.slice(0, 8) }}… — ${{ (o.totalCents / 100).toFixed(2) }}
+          </p>
+          <p class="text-xs text-gray-400">{{ o.createdAt | date: 'medium' }}</p>
+        </div>
+        <span
+          class="text-xs px-2 py-1 rounded-full border"
+          [class]="statusStyles[o.status] ?? 'bg-gray-100 text-gray-500 border-gray-200'"
+        >
+          {{ o.status.replace('_', ' ') }}
+        </span>
+      </div>
+
+      <ul class="mt-3 text-sm text-gray-600 flex flex-col gap-1">
+        @for (line of o.lines; track line.productId) {
+          <li>{{ line.quantity }} × {{ line.productName }} — ${{ (line.unitPriceCents / 100).toFixed(2) }} each</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

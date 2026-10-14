@@ -21,6 +21,15 @@
           Notifications
         </a>
       }
+      <a routerLink="/shop" class="text-sm text-gray-600 hover:text-blue-700 transition-colors">Shop</a>
+      <a routerLink="/cart" class="text-sm text-gray-600 hover:text-blue-700 transition-colors">Cart</a>
+      @if (auth.isAuthenticated()) {
+        <a routerLink="/orders" class="text-sm text-gray-600 hover:text-blue-700 transition-colors">Orders</a>
+      } @else {
+        <a routerLink="/orders/track" class="text-sm text-gray-600 hover:text-blue-700 transition-colors">
+          Track Order
+        </a>
+      }
     </nav>
 
     <div class="flex items-center gap-3">

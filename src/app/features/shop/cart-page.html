@@ -1,0 +1,83 @@
+@if (loading()) {
+  <div class="text-center py-16 text-gray-400">Loading cart…</div>
+} @else {
+  <div class="flex flex-col gap-6">
+    <h1 class="text-2xl font-bold text-gray-900">Your Cart</h1>
+
+    @if (error(); as err) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">{{ err }}</div>
+    }
+
+    @if (items().length === 0) {
+      <div class="text-center py-16 text-gray-400">
+        <p class="text-lg">Your cart is empty.</p>
+        <a routerLink="/shop" class="mt-2 inline-block text-blue-600 hover:underline text-sm">Browse the shop</a>
+      </div>
+    } @else {
+      <div class="flex flex-col gap-3">
+        @for (item of items(); track item.productId) {
+          <div class="border rounded-xl p-4 bg-white shadow-sm flex items-center gap-4">
+            @if (products()[item.productId]?.imageUrl) {
+              <img
+                [src]="products()[item.productId].imageUrl"
+                [alt]="products()[item.productId].name"
+                class="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+              />
+            }
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-900">{{ products()[item.productId]?.name ?? item.productId }}</p>
+              @if (products()[item.productId]; as p) {
+                <p class="text-sm text-gray-500">${{ (p.priceCents / 100).toFixed(2) }} each</p>
+              }
+            </div>
+            <input
+              type="number"
+              min="0"
+              [value]="item.quantity"
+              (change)="onQuantityChange(item.productId, $event)"
+              class="w-20 border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+            />
+            <button
+              (click)="updateQuantity(item.productId, 0)"
+              class="text-gray-400 hover:text-red-500 transition-colors text-sm"
+              title="Remove item"
+            >
+              ✕
+            </button>
+          </div>
+        }
+
+        @if (!auth.isAuthenticated()) {
+          <div class="border-t pt-4 mt-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Email (for your receipt and order tracking)
+            </label>
+            <input
+              type="email"
+              [(ngModel)]="guestEmail"
+              name="guestEmail"
+              placeholder="you@example.com"
+              class="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p class="mt-2 text-xs text-gray-500">
+              Already have an account?
+              <a routerLink="/login" class="text-blue-600 hover:underline">Log in</a>
+              to check out faster and see your order history.
+            </p>
+          </div>
+        }
+
+        <div class="flex items-center justify-between border-t pt-4 mt-2">
+          <span class="text-lg font-semibold text-gray-900">Total: ${{ (totalCents() / 100).toFixed(2) }}</span>
+          <button
+            (click)="checkout()"
+            [disabled]="checkingOut()"
+            class="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          >
+            {{ checkingOut() ? 'Redirecting to payment…' : 'Checkout' }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

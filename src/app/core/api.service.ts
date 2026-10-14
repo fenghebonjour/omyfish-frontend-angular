@@ -7,6 +7,13 @@ import type { FeatureCollection } from 'geojson';
 import { environment } from '../../environments/environment';
 import * as M from './models';
 
+// Cart/checkout accept either the Authorization header the interceptor attaches for a logged-in
+// user, or this explicit X-Cart-Token for an anonymous guest — never both (see CartOwnerResolver
+// on the backend). Only set when a guest is calling.
+function cartHeaders(cartToken?: string) {
+  return cartToken ? { headers: { 'X-Cart-Token': cartToken } } : {};
+}
+
 /**
  * Angular twin of src/lib/api.ts. Same method names, same paths. One deliberate
  * difference: no per-call `token` parameter — core/auth.interceptor.ts attaches the
@@ -157,5 +164,62 @@ export class ApiService {
         .pipe(map(() => undefined)),
 
     getGeoJson: (): Observable<object> => this.http.get<object>(`${this.base}/api/v1/observations/geojson`),
+  };
+
+  shop = {
+    products: {
+      getAll: (): Observable<M.ProductDto[]> => this.http.get<M.ProductDto[]>(`${this.base}/api/v1/shop/products`),
+
+      getById: (id: string): Observable<M.ProductDto> =>
+        this.http.get<M.ProductDto>(`${this.base}/api/v1/shop/products/${id}`),
+    },
+
+    // Cart calls never require login — a guest's cartToken (see cartHeaders above) stands in
+    // for the Authorization header the interceptor attaches once someone's logged in.
+    cart: {
+      get: (cartToken?: string): Observable<M.CartDto> =>
+        this.http.get<M.CartDto>(`${this.base}/api/v1/shop/cart`, cartHeaders(cartToken)),
+
+      addItem: (productId: string, quantity: number, cartToken?: string): Observable<M.CartDto> =>
+        this.http.post<M.CartDto>(`${this.base}/api/v1/shop/cart/items`, { productId, quantity }, cartHeaders(cartToken)),
+
+      // quantity 0 removes the item.
+      updateItem: (productId: string, quantity: number, cartToken?: string): Observable<M.CartDto> =>
+        this.http.put<M.CartDto>(`${this.base}/api/v1/shop/cart/items/${productId}`, { quantity }, cartHeaders(cartToken)),
+
+      // Folds a guest cart into the caller's account cart — called right after login/register
+      // when a guest cart token is still in storage (see AuthService.login).
+      merge: (guestToken: string): Observable<M.CartDto> =>
+        this.http.post<M.CartDto>(`${this.base}/api/v1/shop/cart/merge`, { guestToken }),
+    },
+
+    // idempotencyKey follows the same caller-owns-it convention as billing.checkout — a retry
+    // of the same checkout attempt must reuse the same key. guestEmail is required when
+    // checking out as a guest (no token) and ignored otherwise.
+    checkout: (
+      successUrl: string, cancelUrl: string, idempotencyKey: string, cartToken?: string, guestEmail?: string,
+    ): Observable<M.CheckoutSessionResponse> =>
+      this.http.post<M.CheckoutSessionResponse>(`${this.base}/api/v1/shop/checkout`, { successUrl, cancelUrl, guestEmail }, {
+        headers: { 'Idempotency-Key': idempotencyKey, ...(cartToken ? { 'X-Cart-Token': cartToken } : {}) },
+      }),
+
+    orders: {
+      getAll: (): Observable<M.OrderDto[]> => this.http.get<M.OrderDto[]>(`${this.base}/api/v1/shop/orders`),
+
+      getById: (id: string): Observable<M.OrderDto> =>
+        this.http.get<M.OrderDto>(`${this.base}/api/v1/shop/orders/${id}`),
+
+      requestReturn: (id: string, reason: string): Observable<M.OrderDto> =>
+        this.http.post<M.OrderDto>(`${this.base}/api/v1/shop/orders/${id}/returns`, { reason }),
+
+      // Admin-only; the backend has no cross-user order listing yet, so the caller must already
+      // know the order id (e.g. from a support request) — see AdminApproveReturn.
+      approveReturn: (id: string): Observable<M.OrderDto> =>
+        this.http.patch<M.OrderDto>(`${this.base}/api/v1/shop/orders/${id}/returns/approve`, null),
+
+      // Public guest order tracking by orderId+email, no account needed.
+      lookup: (orderId: string, email: string): Observable<M.OrderDto> =>
+        this.http.get<M.OrderDto>(`${this.base}/api/v1/shop/orders/lookup`, { params: { orderId, email } }),
+    },
   };
 }
