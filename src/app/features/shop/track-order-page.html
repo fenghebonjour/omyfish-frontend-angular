@@ -63,6 +63,13 @@
           <li>{{ line.quantity }} × {{ line.productName }} — ${{ (line.unitPriceCents / 100).toFixed(2) }} each</li>
         }
       </ul>
+
+      @if (o.shippingAddress; as addr) {
+        <p class="mt-2 text-xs text-gray-500">
+          Shipping to: {{ addr.recipientName }}, {{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }},
+          {{ addr.city }} {{ addr.state }} {{ addr.postalCode }}, {{ addr.country }}
+        </p>
+      }
     </div>
   }
 </div>
