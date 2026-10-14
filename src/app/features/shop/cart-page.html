@@ -19,7 +19,7 @@
           <div class="border rounded-xl p-4 bg-white shadow-sm flex items-center gap-4">
             @if (products()[item.productId]?.imageUrl) {
               <img
-                [src]="products()[item.productId].imageUrl"
+                [src]="resolveImageUrl(products()[item.productId].imageUrl)"
                 [alt]="products()[item.productId].name"
                 class="w-16 h-16 object-cover rounded-lg flex-shrink-0"
               />

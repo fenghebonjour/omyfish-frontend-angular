@@ -14,7 +14,7 @@
           <a [routerLink]="['/shop', p.id]">
             @if (!failedImageIds().has(p.id)) {
               <img
-                [src]="p.imageUrl"
+                [src]="resolveImageUrl(p.imageUrl)"
                 [alt]="p.name"
                 class="w-full h-40 object-cover rounded-lg flex-shrink-0"
                 (error)="onImageError(p.id)"

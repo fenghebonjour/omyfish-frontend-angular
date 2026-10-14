@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import type { ProductDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
 import { getOrCreateGuestCartToken } from '../../core/guest-cart';
+import { resolveImageUrl } from '../../core/image-url.util';
 
 /** Angular twin of app/shop/page.tsx — public catalog browsing, no authGuard; add-to-cart
  * works for guests too (a guest cart token stands in for login). */
@@ -26,6 +27,10 @@ export class ShopPage {
 
   onImageError(id: string): void {
     this.failedImageIds.update((prev) => new Set(prev).add(id));
+  }
+
+  resolveImageUrl(url: string): string {
+    return resolveImageUrl(url);
   }
 
   constructor() {

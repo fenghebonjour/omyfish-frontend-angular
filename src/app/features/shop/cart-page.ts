@@ -7,6 +7,7 @@ import { ApiService } from '../../core/api.service';
 import type { CartDto, ProductDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
 import { getOrCreateGuestCartToken } from '../../core/guest-cart';
+import { resolveImageUrl } from '../../core/image-url.util';
 
 /** Angular twin of app/cart/page.tsx — open to guests (no authGuard); checkout accepts either
  * an account token or a guest email. */
@@ -66,6 +67,10 @@ export class CartPage {
   onQuantityChange(productId: string, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.updateQuantity(productId, value);
+  }
+
+  resolveImageUrl(url: string): string {
+    return resolveImageUrl(url);
   }
 
   async checkout(): Promise<void> {

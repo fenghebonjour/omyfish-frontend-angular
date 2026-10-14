@@ -7,6 +7,7 @@ import { ApiService } from '../../core/api.service';
 import type { ProductDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
 import { getOrCreateGuestCartToken } from '../../core/guest-cart';
+import { resolveImageUrl } from '../../core/image-url.util';
 
 /** Angular twin of app/shop/[id]/page.tsx — add-to-cart works for guests too. */
 @Component({
@@ -33,6 +34,10 @@ export class ProductDetailPage {
   uploadError = signal<string | null>(null);
 
   maxQuantity = computed(() => Math.max(1, this.product()?.stockQuantity ?? 1));
+
+  resolveImageUrl(url: string): string {
+    return resolveImageUrl(url);
+  }
 
   constructor() {
     firstValueFrom(this.api.shop.products.getById(this.id))

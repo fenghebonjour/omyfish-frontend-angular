@@ -12,7 +12,7 @@
       <div class="flex flex-col sm:flex-row gap-6">
         @if (!imageFailed()) {
           <img
-            [src]="p.imageUrl"
+            [src]="resolveImageUrl(p.imageUrl)"
             [alt]="p.name"
             class="w-full sm:w-72 h-72 object-cover rounded-xl flex-shrink-0"
             (error)="imageFailed.set(true)"
