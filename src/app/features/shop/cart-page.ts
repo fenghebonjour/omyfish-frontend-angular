@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
+import { CartService } from '../../core/cart.service';
 import type { CartDto, ProductDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
 import { getOrCreateGuestCartToken } from '../../core/guest-cart';
@@ -19,6 +20,7 @@ import { resolveImageUrl } from '../../core/image-url.util';
 export class CartPage {
   auth = inject(AuthService);
   private api = inject(ApiService);
+  private cartBadge = inject(CartService);
 
   cart = signal<CartDto | null>(null);
   products = signal<Record<string, ProductDto>>({});
@@ -46,6 +48,7 @@ export class CartPage {
       })
       .then(([cart, productList]) => {
         this.cart.set(cart);
+        this.cartBadge.applyCart(cart);
         this.products.set(Object.fromEntries(productList.map((p) => [p.id, p])));
       })
       .catch((e) => this.error.set(errorMessage(e)))
@@ -59,6 +62,7 @@ export class CartPage {
         this.api.shop.cart.updateItem(productId, Math.max(0, quantity), guestCartToken),
       );
       this.cart.set(updated);
+      this.cartBadge.applyCart(updated);
     } catch (e) {
       alert('Could not update cart: ' + errorMessage(e));
     }

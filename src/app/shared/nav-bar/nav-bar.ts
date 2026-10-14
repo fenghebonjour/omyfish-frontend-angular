@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { CartService } from '../../core/cart.service';
 
 /**
  * Angular twin of components/NavBar.tsx.
@@ -18,6 +19,7 @@ import { AuthService } from '../../core/auth.service';
 })
 export class NavBar {
   auth = inject(AuthService);
+  cart = inject(CartService);
   private router = inject(Router);
 
   handleLogout(): void {

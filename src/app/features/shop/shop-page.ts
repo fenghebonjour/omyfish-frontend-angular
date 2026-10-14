@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { ApiService } from '../../core/api.service';
+import { CartService } from '../../core/cart.service';
 import type { ProductDto } from '../../core/models';
 import { errorMessage } from '../../core/http-error.util';
 import { getOrCreateGuestCartToken } from '../../core/guest-cart';
@@ -18,6 +19,7 @@ import { resolveImageUrl } from '../../core/image-url.util';
 export class ShopPage {
   auth = inject(AuthService);
   private api = inject(ApiService);
+  private cart = inject(CartService);
 
   products = signal<ProductDto[]>([]);
   loading = signal(true);
@@ -44,7 +46,9 @@ export class ShopPage {
     this.addingId.set(productId);
     try {
       const guestCartToken = this.auth.isAuthenticated() ? undefined : getOrCreateGuestCartToken();
-      await firstValueFrom(this.api.shop.cart.addItem(productId, 1, guestCartToken));
+      const updated = await firstValueFrom(this.api.shop.cart.addItem(productId, 1, guestCartToken));
+      this.cart.applyCart(updated);
+      this.cart.notify('Added to cart ✓');
     } catch (e) {
       alert('Could not add to cart: ' + errorMessage(e));
     } finally {
