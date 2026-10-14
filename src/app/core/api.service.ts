@@ -172,6 +172,14 @@ export class ApiService {
 
       getById: (id: string): Observable<M.ProductDto> =>
         this.http.get<M.ProductDto>(`${this.base}/api/v1/shop/products/${id}`),
+
+      // Admin-only; deliberately not under /api/v1/shop/products (which is public for catalog
+      // browsing) — see AdminProductController on the backend.
+      uploadImage: (id: string, image: File): Observable<M.ProductDto> => {
+        const form = new FormData();
+        form.append('image', image);
+        return this.http.post<M.ProductDto>(`${this.base}/api/v1/shop/admin/products/${id}/image`, form);
+      },
     },
 
     // Cart calls never require login — a guest's cartToken (see cartHeaders above) stands in
@@ -212,14 +220,16 @@ export class ApiService {
       requestReturn: (id: string, reason: string): Observable<M.OrderDto> =>
         this.http.post<M.OrderDto>(`${this.base}/api/v1/shop/orders/${id}/returns`, { reason }),
 
-      // Admin-only; the backend has no cross-user order listing yet, so the caller must already
-      // know the order id (e.g. from a support request) — see AdminApproveReturn.
       approveReturn: (id: string): Observable<M.OrderDto> =>
         this.http.patch<M.OrderDto>(`${this.base}/api/v1/shop/orders/${id}/returns/approve`, null),
 
       // Public guest order tracking by orderId+email, no account needed.
       lookup: (orderId: string, email: string): Observable<M.OrderDto> =>
         this.http.get<M.OrderDto>(`${this.base}/api/v1/shop/orders/lookup`, { params: { orderId, email } }),
+
+      // Admin-only; lists every order regardless of owner, newest first.
+      listAllAdmin: (): Observable<M.OrderDto[]> =>
+        this.http.get<M.OrderDto[]>(`${this.base}/api/v1/shop/orders/admin`),
     },
   };
 }

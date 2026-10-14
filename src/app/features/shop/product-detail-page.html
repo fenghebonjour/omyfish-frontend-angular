@@ -46,6 +46,25 @@
               <span class="text-sm text-green-600">Added to cart ✓</span>
             }
           </div>
+
+          @if (auth.role() === 'ADMIN') {
+            <div class="mt-6 border-t pt-4">
+              <h2 class="text-sm font-semibold text-gray-700">Admin: Replace photo</h2>
+              <input
+                type="file"
+                accept="image/*"
+                (change)="uploadImage($event)"
+                [disabled]="uploadingImage()"
+                class="mt-2 text-sm"
+              />
+              @if (uploadingImage()) {
+                <p class="text-xs text-gray-400 mt-1">Uploading…</p>
+              }
+              @if (uploadError(); as err) {
+                <p class="text-xs text-red-600 mt-1">{{ err }}</p>
+              }
+            </div>
+          }
         </div>
       </div>
     }

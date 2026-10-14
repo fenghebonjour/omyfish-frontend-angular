@@ -29,6 +29,8 @@ export class ProductDetailPage {
   adding = signal(false);
   added = signal(false);
   imageFailed = signal(false);
+  uploadingImage = signal(false);
+  uploadError = signal<string | null>(null);
 
   maxQuantity = computed(() => Math.max(1, this.product()?.stockQuantity ?? 1));
 
@@ -50,6 +52,22 @@ export class ProductDetailPage {
       alert('Could not add to cart: ' + errorMessage(e));
     } finally {
       this.adding.set(false);
+    }
+  }
+
+  async uploadImage(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingImage.set(true);
+    this.uploadError.set(null);
+    try {
+      const updated = await firstValueFrom(this.api.shop.products.uploadImage(this.id, file));
+      this.product.set(updated);
+    } catch (e) {
+      this.uploadError.set(errorMessage(e));
+    } finally {
+      this.uploadingImage.set(false);
+      (event.target as HTMLInputElement).value = '';
     }
   }
 }
